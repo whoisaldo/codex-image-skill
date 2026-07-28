@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flowline — Data pipelines that explain themselves</title>
+<style>
+  :root{
+    --bg:#08060F; --panel:#0F0C1D; --line:#241D3D;
+    --ink:#F4F2FF; --muted:#A79FC4;
+    --indigo:#6C5CE7; --cyan:#22D3EE; --magenta:#E879F9;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:16px/1.6 ui-sans-serif,-apple-system,"Segoe UI",Inter,system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:0 32px}
+  a{color:inherit;text-decoration:none}
+
+  /* nav */
+  nav{display:flex;align-items:center;justify-content:space-between;
+      padding:22px 0;position:relative;z-index:3}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:-.02em}
+  .logo i{width:22px;height:22px;border-radius:7px;
+    background:linear-gradient(135deg,var(--cyan),var(--indigo));display:block}
+  .navlinks{display:flex;gap:30px;color:var(--muted);font-size:14.5px}
+  .navlinks a:hover{color:var(--ink)}
+  .btn{background:linear-gradient(135deg,var(--indigo),#8B7BFF);color:#fff;
+    padding:9px 18px;border-radius:9px;font-size:14.5px;font-weight:550;
+    box-shadow:0 6px 22px -8px var(--indigo)}
+
+  /* hero — generated art sits behind, real text overlays the negative space */
+  .hero{position:relative;isolation:isolate;overflow:hidden;
+        border-bottom:1px solid var(--line)}
+  .hero img{position:absolute;inset:0;width:100%;height:100%;
+    object-fit:cover;object-position:right center;z-index:-2}
+  .hero::after{content:"";position:absolute;inset:0;z-index:-1;
+    background:linear-gradient(90deg,var(--bg) 4%,rgba(8,6,15,.82) 34%,
+               rgba(8,6,15,.15) 62%,transparent 88%)}
+  .hero-inner{padding:120px 0 132px;max-width:600px}
+  .pill{display:inline-flex;align-items:center;gap:8px;font-size:13px;
+    color:var(--muted);border:1px solid var(--line);background:rgba(255,255,255,.03);
+    padding:6px 13px;border-radius:999px;margin-bottom:26px}
+  .pill b{color:var(--cyan);font-weight:600}
+  h1{font-size:60px;line-height:1.04;letter-spacing:-.035em;font-weight:680}
+  h1 em{font-style:normal;
+    background:linear-gradient(100deg,var(--cyan),var(--magenta));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--muted);font-size:18.5px;margin:22px 0 34px;max-width:470px}
+  .cta{display:flex;gap:14px;align-items:center}
+  .ghost{border:1px solid var(--line);padding:9px 18px;border-radius:9px;
+    font-size:14.5px;color:var(--muted)}
+
+  /* sections */
+  section{padding:96px 0;border-bottom:1px solid var(--line)}
+  .eyebrow{color:var(--cyan);font-size:13px;font-weight:600;
+    letter-spacing:.09em;text-transform:uppercase;margin-bottom:14px}
+  h2{font-size:38px;letter-spacing:-.028em;line-height:1.14;font-weight:660}
+  .lead{color:var(--muted);margin-top:14px;font-size:17px;max-width:440px}
+  .split{display:grid;grid-template-columns:1fr 1.15fr;gap:64px;align-items:center}
+  .shot{border-radius:16px;overflow:hidden;border:1px solid var(--line);
+    box-shadow:0 40px 90px -50px #000, 0 0 0 1px rgba(255,255,255,.02)}
+  .shot img{display:block;width:100%;height:auto}
+
+  /* mascot band — transparent cutout over a colored panel */
+  .band{background:
+      radial-gradient(1000px 380px at 78% 45%,rgba(108,92,231,.30),transparent 68%),
+      var(--panel)}
+  .band .split{grid-template-columns:1.1fr .9fr}
+  .mascot{display:block;width:100%;max-width:330px;margin:0 auto;
+    filter:drop-shadow(0 30px 45px rgba(0,0,0,.55))}
+  ul.checks{list-style:none;margin-top:26px;display:grid;gap:13px}
+  ul.checks li{display:flex;gap:11px;color:var(--muted);font-size:16px}
+  ul.checks svg{flex:0 0 19px;margin-top:3px}
+
+  /* empty state in a faux app card */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    overflow:hidden;max-width:560px;margin:0 auto}
+  .card .bar{display:flex;gap:7px;padding:13px 16px;border-bottom:1px solid var(--line)}
+  .card .bar i{width:10px;height:10px;border-radius:50%;background:#2E2748;display:block}
+  .card .body{padding:34px 34px 40px;text-align:center}
+  .card .body img{width:196px;height:auto;border-radius:12px;margin-bottom:20px}
+  .card h3{font-size:18.5px;font-weight:620;letter-spacing:-.015em}
+  .card p{color:var(--muted);font-size:14.5px;margin-top:7px}
+  .center{text-align:center;max-width:560px;margin:0 auto 48px}
+  .center .lead{margin-left:auto;margin-right:auto}
+
+  footer{padding:40px 0;color:#6E668C;font-size:13.5px;
+    display:flex;justify-content:space-between}
+
+  @media(max-width:900px){
+    h1{font-size:40px} h2{font-size:29px}
+    .split{grid-template-columns:1fr;gap:40px}
+    .hero-inner{padding:80px 0 90px}
+    .hero::after{background:linear-gradient(180deg,rgba(8,6,15,.90),rgba(8,6,15,.72))}
+    .navlinks{display:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <!-- Generated by Codex (codex-image skill). Contains NO baked-in text -->
+  <img src="img/hero.png" alt="">
+  <div class="wrap">
+    <nav>
+      <div class="logo"><i></i> Flowline</div>
+      <div class="navlinks">
+        <a href="#">Product</a><a href="#">Docs</a>
+        <a href="#">Pricing</a><a href="#">Changelog</a>
+      </div>
+      <a class="btn" href="#">Start free</a>
+    </nav>
+    <div class="hero-inner">
+      <span class="pill"><b>New</b> Lineage graphs are live</span>
+      <h1>Data pipelines that <em>explain themselves</em>.</h1>
+      <p class="sub">Flowline traces every column back to its source, so when a
+        number looks wrong you know why in seconds — not sprints.</p>
+      <div class="cta">
+        <a class="btn" href="#">Start free</a>
+        <a class="ghost" href="#">Book a demo →</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap split">
+    <div>
+      <div class="eyebrow">Observability</div>
+      <h2>See the whole pipeline at a glance.</h2>
+      <p class="lead">Live freshness, volume and schema checks on every table,
+        with alerts that point at the commit that broke them.</p>
+    </div>
+    <!-- Generated by Codex: photoreal device mockup -->
+    <div class="shot"><img src="img/product.png" alt="Flowline dashboard on a laptop"></div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap split">
+    <div>
+      <div class="eyebrow">Onboarding</div>
+      <h2>Connected in under five minutes.</h2>
+      <ul class="checks">
+        <li><svg width="19" height="19" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="#22D3EE" stroke-width="1.5"/><path d="M6 10.4l2.6 2.6L14 7.6" stroke="#22D3EE" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Point it at your warehouse — no agents to deploy</li>
+        <li><svg width="19" height="19" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="#22D3EE" stroke-width="1.5"/><path d="M6 10.4l2.6 2.6L14 7.6" stroke="#22D3EE" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Lineage is inferred automatically from query logs</li>
+        <li><svg width="19" height="19" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="#22D3EE" stroke-width="1.5"/><path d="M6 10.4l2.6 2.6L14 7.6" stroke="#22D3EE" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Alerts land in Slack with a suggested owner</li>
+      </ul>
+    </div>
+    <!-- Generated by Codex with --transparent: true alpha over the panel -->
+    <img class="mascot" src="img/mascot.png" alt="Flowline assistant mascot">
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="center">
+      <div class="eyebrow">Thoughtful details</div>
+      <h2>Even the empty states earn their keep.</h2>
+      <p class="lead">Custom art everywhere a screen could have felt unfinished.</p>
+    </div>
+    <div class="card">
+      <div class="bar"><i></i><i></i><i></i></div>
+      <div class="body">
+        <!-- Generated by Codex: flat-vector empty state -->
+        <img src="img/empty.png" alt="">
+        <h3>No pipelines yet</h3>
+        <p>Connect a warehouse and Flowline will map it for you.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="wrap">
+  <span>© 2026 Flowline Labs</span>
+  <span>All artwork generated with the codex-image skill</span>
+</footer>
+
+</body>
+</html>
