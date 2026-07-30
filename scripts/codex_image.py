@@ -24,6 +24,7 @@ import sys
 import tempfile
 import threading
 import time
+from math import gcd
 from pathlib import Path
 
 CODEX_HOME = Path(os.environ.get("CODEX_HOME") or (Path.home() / ".codex"))
@@ -101,8 +102,11 @@ def build_prompt(spec, count, aspect, transparent, key_color, has_inputs):
         "=== SPECIFICATION ===",
         spec.strip(),
         "",
+        # Whole-number ratio, not w/h: portrait would otherwise render as
+        # "0.667:1", which is a confusing way to say 2:3.
         f"Output framing: {aspect} orientation, target {w}x{h} pixels "
-        f"({round(w / h, 3)}:1 aspect ratio). Compose for this exact frame.",
+        f"({w // gcd(w, h)}:{h // gcd(w, h)} aspect ratio). "
+        "Compose for this exact frame.",
     ]
     if transparent:
         lines.append(CHROMA_BLOCK.format(key=key_color))
@@ -201,6 +205,7 @@ def run_codex(prompt, inputs, timeout, effort, workdir):
                 err_lines.append(json.dumps(evt)[:500])
         proc.wait()
     finally:
+        finished.set()
         watchdog.cancel()
 
     if timed_out.is_set():
@@ -332,11 +337,14 @@ def main():
     ap.add_argument("--key-color", default="#00ff00",
                     help="Chroma key color (use #ff00ff for green subjects).")
     ap.add_argument("--exact-size", action="store_true",
-                    help="Force exact --aspect pixel dimensions via sips.")
+                    help="Force exact --aspect pixels: scale-to-cover then "
+                         "centre-crop, never stretch. Requires macOS sips.")
     ap.add_argument("--timeout", type=int, default=900, help="Seconds (default 900).")
     ap.add_argument("--effort", default="low",
                     choices=["minimal", "low", "medium", "high", "xhigh"],
-                    help="Codex reasoning effort for prompt shaping (default low).")
+                    help="Codex reasoning effort for prompt shaping (default low). "
+                         "Raise to medium for long or compositing-heavy specs, "
+                         "where instruction adherence matters more than speed.")
     ap.add_argument("--workdir", default=None,
                     help="Directory codex runs in (read-only). Default: cwd.")
     ap.add_argument("--json", action="store_true", help="Emit JSON result on stdout.")

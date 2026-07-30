@@ -38,7 +38,37 @@ Constraints: no text, no logos, no watermark, no people
 Avoid: busy patterns, stock-photo look, high-contrast detail on the left third
 ```
 
-### Device / product mockup
+### Device mockup — real UI (preferred whenever the product exists)
+
+Pass the actual screenshot with `--input`. The model composites the genuine
+interface onto the device instead of inventing one, which is what makes the shot
+worth putting in front of anyone.
+
+```
+Use case: product-mockup
+Asset type: project card / marketing product shot
+Primary request: The attached website screenshot shown running on a modern
+  thin-bezel laptop, angled three-quarter view, on a dark matte surface
+Style/medium: photorealistic studio product photography, 85mm, shallow depth of
+  field, screen perfectly crisp and readable
+Composition/framing: device left-of-centre; keep the right third empty and dark
+Lighting/mood: soft key from upper left, gentle rim light, faint surface reflection
+Color palette: near-black #08070d ground; the screen keeps its own colors exactly
+Constraints: reproduce the attached screenshot on the screen EXACTLY as provided -
+  do not redesign, redraw, restyle, re-lay-out, invent or alter any UI element,
+  heading, body text, button or color within it; no added text; no watermark
+Avoid: invented interface elements, garbled lettering, distorted screen content
+```
+
+**Then diff it against the source.** A mockup that redrew the UI is a fabricated
+screenshot — check headline wording, nav items, button labels, numbers. Ship
+only if they match.
+
+For a set of these, hold everything but `Primary request`/`--input` constant so
+the cards read as one family. Use a phone instead of a laptop when the site is
+mobile-first.
+
+### Device mockup — invented UI (only when there's nothing to screenshot)
 ```
 Use case: ui-mockup
 Asset type: marketing "product shot"
@@ -51,8 +81,9 @@ Constraints: screen content must read as a real interface; no readable brand
   names; no watermark
 Avoid: gibberish text, warped screen edges, cluttered props
 ```
-Describe screen UI as **shapes and blocks** ("blurred label bars", "three KPI
-cards"), never as specific words — that's what keeps text from garbling.
+Here — and *only* here — describe screen UI as **shapes and blocks** ("blurred
+label bars", "three KPI cards"), never as specific words; that's what keeps text
+from garbling. With `--input` you want the opposite: real words, reproduced.
 
 ### Flat vector spot illustration / empty state
 ```
@@ -112,7 +143,10 @@ impossible to tell which instruction worked.
 | Too "stock photo" | Add a specific medium + camera/lens, and an `Avoid: stock-photo look` line |
 | Clashes with the site design | Name literal hex colors from the palette |
 | Art sits in a bright box inside a dark card | State the destination background hex, or use `--transparent` |
-| Wrong aspect | Set `--aspect`, add `--exact-size` to force pixels |
+| Wrong aspect | Set `--aspect`, add `--exact-size` to force pixels (crops, never stretches) |
+| Generated portrait when you asked for wide | State `WIDE LANDSCAPE ORIENTATION, wider than tall` in the spec itself and add `Avoid: letterboxing, pillarboxing, black bars` — left alone the generator will pad a portrait image into a wide canvas |
+| Mockup redrew the UI instead of reproducing it | Restate the fidelity constraint verbatim, raise `--effort medium`, regenerate — and never ship an unchecked one |
+| Device cropped at the edges by the destination frame | Leave the file uncropped and let the CSS (`object-cover`) trim, rather than baking a crop that clips the subject |
 | Edit changed too much | Restate invariants; change one thing per round |
 | Green fringe on a cutout | Subject contained green — regenerate with `--key-color '#ff00ff'` |
 | Cutout ate part of the subject | Subject too translucent for chroma key — generate on a solid backdrop instead |
